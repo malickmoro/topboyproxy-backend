@@ -178,7 +178,6 @@ public class CustomerController {
                         code.getCategory(),
                         LocalDateTime.now(),
                         code,
-                        order.getQuantity(),
                         PaymentOrderStatus.COMPLETED
                 );
                 saleLogRepository.save(salesLog);

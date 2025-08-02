@@ -37,9 +37,7 @@ public class SaleLog {
 
     @OneToOne
     private ProxyCode code;
-    
-    private int quantity;
-    
+        
     @Enumerated(EnumType.STRING)
     private PaymentOrderStatus paymentStatus = PaymentOrderStatus.COMPLETED;
 }

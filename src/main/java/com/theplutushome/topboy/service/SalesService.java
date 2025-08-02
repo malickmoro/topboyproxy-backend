@@ -25,17 +25,17 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class SalesService {
-    
-     private final SaleLogRepository saleLogRepository;
-    
+
+    private final SaleLogRepository saleLogRepository;
+
     public List<SaleDTO> getSales() {
         try {
             List<SaleLog> saleLogs = saleLogRepository.findAllByOrderByTimestampDesc();
-            
+
             return saleLogs.stream()
-                .map(SaleDTO::fromSaleLog)
-                .collect(Collectors.toList());
-                
+                    .map(SaleDTO::fromSaleLog)
+                    .collect(Collectors.toList());
+
         } catch (Exception e) {
             log.error("Error retrieving sales data", e);
             throw new RuntimeException("Failed to retrieve sales data", e);
