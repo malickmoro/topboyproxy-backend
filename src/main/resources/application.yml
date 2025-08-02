@@ -24,21 +24,21 @@ server:
   
 application:
   api:
-    key: pFYuSfBn1Iw2XBlN-CAokQn
+    key: pFYuSfBn1Iw2XBlN-CAokQn ${APP_KEY}
 
 jwt:
   secret:
-    key: U7NbIepRzfAJSTCkd3N3pnR0OTPxFVrrAPq6K+8TlNo=
+    key: U7NbIepRzfAJSTCkd3N3pnR0OTPxFVrrAPq6K+8TlNo= ${JWT_SECRET}
 
-pos_sales_id: 2022959
-client_id: NYrKxmz
-client_secret: edf7eb99d8e74511b478c4fa970d8eaf
-sms_client_id: rkrvzcgu
-sms_client_secret: yxqoqmah
-hubtel_secrety_key: Basic TllyS3htejplZGY3ZWI5OWQ4ZTc0NTExYjQ3OGM0ZmE5NzBkOGVhZg==
-callback_url: https://your-backend.com/api/client/callback
-cancellation_url: https://your-frontend.com/cancel
-return_url: https://your-frontend.com/success
+pos_sales_id: 2022959 ${MERCHANT_ID}
+client_id: NYrKxmz ${CLIENT_ID}
+client_secret: edf7eb99d8e74511b478c4fa970d8eaf ${CLIENT_SECRET}
+sms_client_id: rkrvzcgu ${SMS_CLIENT_ID}
+sms_client_secret: yxqoqmah ${SMS_CLIENT_SECRET}
+hubtel_secrety_key: Basic TllyS3htejplZGY3ZWI5OWQ4ZTc0NTExYjQ3OGM0ZmE5NzBkOGVhZg== ${HUBTEL_SECRET_KEY}
+callback_url: https://your-backend.com/api/client/callback ${CALLBACK_URL}
+cancellation_url: https://your-frontend.com/cancel ${CANCELLATION_URL}
+return_url: https://your-frontend.com/success ${RETURN_URL}
 
 proxy:
   server:
