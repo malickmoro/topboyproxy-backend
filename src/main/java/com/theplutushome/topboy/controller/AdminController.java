@@ -10,6 +10,7 @@ import com.theplutushome.topboy.dto.LoginRequest;
 import com.theplutushome.topboy.dto.LoginResponse;
 import com.theplutushome.topboy.dto.ProxyCodeDTO;
 import com.theplutushome.topboy.dto.SaleDTO;
+import com.theplutushome.topboy.dto.SalesResponse;
 import com.theplutushome.topboy.dto.UploadResult;
 import com.theplutushome.topboy.entity.AdminUser;
 import com.theplutushome.topboy.entity.CodeCategory;
@@ -188,17 +189,19 @@ public class AdminController {
 
     @GetMapping("/sales")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<SaleDTO>> getSales(
+    public ResponseEntity<SalesResponse> getSales(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String category) {
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String period
+    ) {
 
         try {
             log.info("Received filters - startDate: {}, endDate: {}, category: {}",
                     startDate, endDate, category);
 
-            List<SaleDTO> sales = salesService.getSales(startDate, endDate, category);
-            return ResponseEntity.ok(sales);
+            SalesResponse response = salesService.getSalesWithStatistics(startDate, endDate, category, period);
+            return ResponseEntity.ok(response);
 
         } catch (Exception e) {
             log.error("Error retrieving sales data", e);

@@ -177,6 +177,7 @@ public class CustomerController {
                         phoneNumber,
                         code.getCategory(),
                         LocalDateTime.now(),
+                        getUnitPrice(code.getCategory()),
                         code,
                         PaymentOrderStatus.COMPLETED
                 );
@@ -206,5 +207,4 @@ public class CustomerController {
             return ResponseEntity.ok("Payment failed");
         }
     }
-
 }

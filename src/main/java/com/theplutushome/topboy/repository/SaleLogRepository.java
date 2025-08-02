@@ -5,6 +5,7 @@ import com.theplutushome.topboy.entity.SaleLog;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
@@ -14,7 +15,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  *
  * @author plutus
  */
-public interface SaleLogRepository extends JpaRepository<SaleLog, Long> {
+public interface SaleLogRepository extends JpaRepository<SaleLog, Long>, JpaSpecificationExecutor<SaleLog> {
 
     List<SaleLog> findByPhoneNumber(String phoneNumber);
 

@@ -34,6 +34,8 @@ public class SaleLog {
     private CodeCategory category;
 
     private LocalDateTime timestamp;
+    
+    private int amount;
 
     @OneToOne
     private ProxyCode code;

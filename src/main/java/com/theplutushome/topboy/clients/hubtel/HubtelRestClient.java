@@ -121,7 +121,7 @@ public class HubtelRestClient implements HubtelHttpClient {
                             .path("/send")
                             .queryParam("clientsecret", smsClientSecret)
                             .queryParam("clientid", smsClientId)
-                            .queryParam("from", "Plutus")
+                            .queryParam("from", "TopBoyProxy")
                             .queryParam("to", to)
                             .queryParam("content", content)
                             .build(POS_Sales_ID))
