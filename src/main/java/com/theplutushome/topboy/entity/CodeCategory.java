@@ -10,7 +10,13 @@ package com.theplutushome.topboy.entity;
  */
 public enum CodeCategory {
     FIFTY(50),
-    HUNDRED(100);
+    HUNDRED(100),
+    TWO_HUNDRED(200),
+    THREE_HUNDRED(300),
+    FOUR_HUNDRED(400),
+    SIX_HUNDRED(600),
+    EIGHT_HUNDRED(800),
+    THOUSAND(1000);
 
     private final int value;
 
