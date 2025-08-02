@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.PropertySource;
@@ -171,18 +172,32 @@ public class CustomerController {
                 code.setSoldAt(LocalDateTime.now());
                 proxyCodeRepository.save(code);
 
-                SaleLog log = new SaleLog(
+                SaleLog salesLog = new SaleLog(
                         null,
                         phoneNumber,
                         code.getCategory(),
                         LocalDateTime.now(),
-                        code
+                        code,
+                        order.getQuantity(),
+                        PaymentOrderStatus.COMPLETED
                 );
-                saleLogRepository.save(log);
+                saleLogRepository.save(salesLog);
             }
 
             // Send code to customer (optional)
-            String smsMessage = "Your proxy code purchase is complete. Enjoy!";
+            String codesString = availableCodes.stream()
+                    .map(ProxyCode::getCode)
+                    .collect(Collectors.joining("\n"));
+
+            String smsMessage = """
+        🎉 Payment confirmed!
+
+        Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
+
+        %s
+
+        Thank you for choosing us! 🙌
+        """.formatted(codesString);
             hubtelClient.sendSMS(phoneNumber, smsMessage);
 
             return ResponseEntity.ok("Order confirmed and codes delivered");

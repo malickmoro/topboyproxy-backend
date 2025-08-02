@@ -9,6 +9,7 @@ import com.theplutushome.topboy.dto.CreateAdminUserRequest;
 import com.theplutushome.topboy.dto.LoginRequest;
 import com.theplutushome.topboy.dto.LoginResponse;
 import com.theplutushome.topboy.dto.ProxyCodeDTO;
+import com.theplutushome.topboy.dto.SaleDTO;
 import com.theplutushome.topboy.dto.UploadResult;
 import com.theplutushome.topboy.entity.AdminUser;
 import com.theplutushome.topboy.entity.CodeCategory;
@@ -18,6 +19,7 @@ import com.theplutushome.topboy.repository.AdminUserRepository;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
 import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
 import com.theplutushome.topboy.service.FileUploadService;
+import com.theplutushome.topboy.service.SalesService;
 import com.theplutushome.topboy.util.JwtUtil;
 import jakarta.validation.Valid;
 import java.util.Arrays;
@@ -57,6 +59,7 @@ public class AdminController {
     private final ProxyCodeRepository proxyCodeRepository;
     private final AdminUserRepository adminUserRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SalesService salesService; // Add this
     private final JwtUtil jwtUtil;
 
     @PostMapping("/login")
@@ -180,6 +183,18 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Internal server error",
                             "Failed to delete code due to database error"));
+        }
+    }
+
+    @GetMapping("/sales")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<SaleDTO>> getSales() {
+        try {
+            List<SaleDTO> sales = salesService.getSales();
+            return ResponseEntity.ok(sales);
+        } catch (Exception e) {
+            log.error("Error retrieving sales data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

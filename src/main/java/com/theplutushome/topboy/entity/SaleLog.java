@@ -10,6 +10,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,5 +37,10 @@ public class SaleLog {
 
     @OneToOne
     private ProxyCode code;
+    
+    private int quantity;
+    
+    @Enumerated(EnumType.STRING)
+    private PaymentOrderStatus paymentStatus = PaymentOrderStatus.COMPLETED;
 }
 
