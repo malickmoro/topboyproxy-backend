@@ -188,10 +188,18 @@ public class AdminController {
 
     @GetMapping("/sales")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<SaleDTO>> getSales() {
+    public ResponseEntity<List<SaleDTO>> getSales(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String category) {
+
         try {
-            List<SaleDTO> sales = salesService.getSales();
+            log.info("Received filters - startDate: {}, endDate: {}, category: {}",
+                    startDate, endDate, category);
+
+            List<SaleDTO> sales = salesService.getSales(startDate, endDate, category);
             return ResponseEntity.ok(sales);
+
         } catch (Exception e) {
             log.error("Error retrieving sales data", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
