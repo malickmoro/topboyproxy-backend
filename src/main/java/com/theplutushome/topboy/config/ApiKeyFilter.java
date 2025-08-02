@@ -50,6 +50,9 @@ public class ApiKeyFilter extends OncePerRequestFilter {
 
         // Attempt API Key validation
         String apiKey = request.getHeader(API_KEY_HEADER);
+        log.warn("Provided key chars: " + apiKey.chars().boxed().toList());
+        log.warn("Expected key chars: " + EXPECTED_API_KEY.chars().boxed().toList());
+
         if (apiKey != null) { // API Key is present
             if (EXPECTED_API_KEY.equals(apiKey)) {
                 // Set authentication with ROLE_API
