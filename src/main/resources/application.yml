@@ -1,0 +1,49 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/topboy
+    username: topboy
+    password: topboy
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    open-in-view: false
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+  
+application:
+  api:
+    key: pFYuSfBn1Iw2XBlN-CAokQn
+
+jwt:
+  secret:
+    key: U7NbIepRzfAJSTCkd3N3pnR0OTPxFVrrAPq6K+8TlNo=
+
+pos_sales_id: 2022959
+client_id: NYrKxmz
+client_secret: edf7eb99d8e74511b478c4fa970d8eaf
+sms_client_id: rkrvzcgu
+sms_client_secret: yxqoqmah
+hubtel_secrety_key: Basic TllyS3htejplZGY3ZWI5OWQ4ZTc0NTExYjQ3OGM0ZmE5NzBkOGVhZg==
+callback_url: https://your-backend.com/api/client/callback
+cancellation_url: https://your-frontend.com/cancel
+return_url: https://your-frontend.com/success
+
+proxy:
+  server:
+    host: us-east-static-01.quotaguard.com
+    port: 9293
+    username: huqss2t0ojfpzl
+    password: cw2028k0gx5osc63ahkt6pozfepk87
+
