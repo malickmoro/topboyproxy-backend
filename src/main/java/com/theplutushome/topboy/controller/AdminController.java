@@ -142,7 +142,7 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/codes")
     public ResponseEntity<List<ProxyCodeDTO>> getAllCodes() {
-        List<ProxyCodeDTO> result = proxyCodeRepository.findAll().stream()
+        List<ProxyCodeDTO> result = proxyCodeRepository.findAllByArchivedFalseOrderByIdAsc().stream()
                 .map(code -> new ProxyCodeDTO(
                 code.getId(),
                 code.getCode(),
