@@ -61,7 +61,7 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                 return;
             } else {
                 // Invalid API Key provided
-                log.warn("ApiKeyFilter: Invalid API Key provided ----> " + apiKey);
+                log.warn("ApiKeyFilter: Invalid API Key provided ----> " + apiKey + " the expected key is --> " + EXPECTED_API_KEY);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("Forbidden: Invalid API Key");
                 return;
