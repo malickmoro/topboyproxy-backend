@@ -4,6 +4,7 @@
  */
 package com.theplutushome.topboy.controller;
 
+import com.theplutushome.topboy.dto.ApiResponse;
 import com.theplutushome.topboy.dto.CreateAdminUserRequest;
 import com.theplutushome.topboy.dto.LoginRequest;
 import com.theplutushome.topboy.dto.LoginResponse;
@@ -11,6 +12,7 @@ import com.theplutushome.topboy.dto.ProxyCodeDTO;
 import com.theplutushome.topboy.dto.UploadResult;
 import com.theplutushome.topboy.entity.AdminUser;
 import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.ProxyCode;
 import com.theplutushome.topboy.entity.ProxyPriceConfig;
 import com.theplutushome.topboy.repository.AdminUserRepository;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
@@ -20,13 +22,17 @@ import com.theplutushome.topboy.util.JwtUtil;
 import jakarta.validation.Valid;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -71,6 +77,7 @@ public class AdminController {
         return ResponseEntity.ok(new LoginResponse(token));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/price")
     public ResponseEntity<?> updatePrice(
             @RequestParam CodeCategory category,
@@ -90,11 +97,13 @@ public class AdminController {
         return ResponseEntity.ok("Price for " + category + " updated to " + newPrice + " GHS");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/prices")
     public ResponseEntity<List<ProxyPriceConfig>> getAllPrices() {
         return ResponseEntity.ok(proxyPriceConfigRepository.findAll());
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/upload")
     public ResponseEntity<UploadResult> uploadCodes(
             @RequestParam("file") MultipartFile file,
@@ -126,6 +135,7 @@ public class AdminController {
         return ResponseEntity.ok("Admin user created successfully");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/codes")
     public ResponseEntity<List<ProxyCodeDTO>> getAllCodes() {
         List<ProxyCodeDTO> result = proxyCodeRepository.findAll().stream()
@@ -142,9 +152,35 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/categories")
     public ResponseEntity<List<CodeCategory>> getAvailableCategories() {
         return ResponseEntity.ok(Arrays.asList(CodeCategory.values()));
+    }
+
+    @DeleteMapping("/codes/{codeId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> deleteCode(@PathVariable Long codeId) {
+        try {
+            // Check if code exists
+            Optional<ProxyCode> code = proxyCodeRepository.findById(codeId);
+            if (code.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse(false, "Code not found",
+                                "Code with ID " + codeId + " does not exist"));
+            }
+
+            // Delete the codecode
+            proxyCodeRepository.deleteById(codeId);
+
+            return ResponseEntity.ok(new ApiResponse(true, "Code deleted successfully", null));
+
+        } catch (Exception e) {
+            log.error("Error deleting code with ID: " + codeId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "Internal server error",
+                            "Failed to delete code due to database error"));
+        }
     }
 
 }
