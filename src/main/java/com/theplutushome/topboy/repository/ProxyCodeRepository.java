@@ -20,8 +20,10 @@ public interface ProxyCodeRepository extends JpaRepository<ProxyCode, Long> {
 
     boolean existsByCode(String code);
 
-    int countByCategoryAndSoldFalse(CodeCategory category); // ✅ Add this line
+    // ✅ Count only active and unsold codes
+    int countByCategoryAndSoldFalseAndArchivedFalse(CodeCategory category);
 
-    @Query("SELECT p FROM ProxyCode p WHERE p.category = :category AND p.sold = false ORDER BY p.id ASC")
+    // ✅ Find available (unsold + not archived) codes
+    @Query("SELECT p FROM ProxyCode p WHERE p.category = :category AND p.sold = false AND p.archived = false ORDER BY p.id ASC")
     List<ProxyCode> findAvailableByCategoryLimited(@Param("category") CodeCategory category, Pageable pageable);
 }

@@ -31,6 +31,9 @@ public class ProxyCode {
     private CodeCategory category;
 
     private boolean sold = false;
+    
+    @Column(nullable = false)
+    private boolean archived = false;
 
     private LocalDateTime soldAt;
     private String buyerPhone;

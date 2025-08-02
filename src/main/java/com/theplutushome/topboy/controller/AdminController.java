@@ -166,7 +166,6 @@ public class AdminController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteCode(@PathVariable Long codeId) {
         try {
-            // Check if code exists
             Optional<ProxyCode> code = proxyCodeRepository.findById(codeId);
             if (code.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -174,8 +173,10 @@ public class AdminController {
                                 "Code with ID " + codeId + " does not exist"));
             }
 
-            // Delete the codecode
-            proxyCodeRepository.deleteById(codeId);
+            // ✅ Soft delete
+            ProxyCode found = code.get();
+            found.setArchived(true);
+            proxyCodeRepository.save(found);
 
             return ResponseEntity.ok(new ApiResponse(true, "Code deleted successfully", null));
 

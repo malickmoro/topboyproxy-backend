@@ -72,7 +72,7 @@ public class CustomerController {
         List<AvailableCategoryDTO> result = Arrays.stream(CodeCategory.values())
                 .map(category -> new AvailableCategoryDTO(
                 category,
-                proxyCodeRepository.countByCategoryAndSoldFalse(category),
+                proxyCodeRepository.countByCategoryAndSoldFalseAndArchivedFalse(category),
                 getUnitPrice(category),
                 category.name() + " proxies"))
                 .filter(dto -> dto.getAvailableCount() > 0)
@@ -85,7 +85,7 @@ public class CustomerController {
     public ResponseEntity<PaymentLinkResponse> generateInvoice(@Valid @RequestBody ProxyOrderRequest request) {
         log.info("Payment request received: {}", request);
 
-        int available = proxyCodeRepository.countByCategoryAndSoldFalse(request.getCategory());
+        int available = proxyCodeRepository.countByCategoryAndSoldFalseAndArchivedFalse(request.getCategory());
         if (request.getQuantity() > available) {
             return ResponseEntity.badRequest().body(null);
         }
