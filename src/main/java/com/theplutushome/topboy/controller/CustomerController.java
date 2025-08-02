@@ -1,5 +1,6 @@
 package com.theplutushome.topboy.controller;
 
+import com.theplutushome.optimus.entity.api.hubtel.HubtelCallBack;
 import com.theplutushome.optimus.entity.api.hubtel.PaymentLinkResponse;
 import com.theplutushome.topboy.clients.hubtel.HubtelRestClient;
 import com.theplutushome.topboy.dto.AvailableCategoryDTO;
@@ -7,12 +8,17 @@ import com.theplutushome.topboy.dto.ProxyOrderInternalRequest;
 import com.theplutushome.topboy.dto.ProxyOrderRequest;
 import com.theplutushome.topboy.entity.CodeCategory;
 import com.theplutushome.topboy.entity.PaymentOrderStatus;
+import com.theplutushome.topboy.entity.ProxyCode;
+import com.theplutushome.topboy.entity.ProxyOrder;
 import com.theplutushome.topboy.entity.ProxyPriceConfig;
+import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkRequest;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
 import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
+import com.theplutushome.topboy.repository.SaleLogRepository;
 import com.theplutushome.topboy.service.OrderService;
 import jakarta.validation.Valid;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,6 +45,7 @@ public class CustomerController {
 
     private final ProxyCodeRepository proxyCodeRepository;
     private final ProxyPriceConfigRepository proxyPriceConfigRepository;
+    private final SaleLogRepository saleLogRepository;
     private final OrderService orderService;
     private final HubtelRestClient hubtelClient;
     private final String MERCHANT_CODE;
@@ -45,9 +54,10 @@ public class CustomerController {
     private final String CANCELLATION_URL;
 
     public CustomerController(Environment env, ProxyCodeRepository proxyCodeRepository, OrderService orderService,
-            HubtelRestClient hubtelRestClient, ProxyPriceConfigRepository priceConfigRepository) {
+            HubtelRestClient hubtelRestClient, ProxyPriceConfigRepository priceConfigRepository, SaleLogRepository saleLogRepository) {
         this.proxyCodeRepository = proxyCodeRepository;
         this.proxyPriceConfigRepository = priceConfigRepository;
+        this.saleLogRepository = saleLogRepository;
         this.orderService = orderService;
         this.hubtelClient = hubtelRestClient;
         this.MERCHANT_CODE = Objects.requireNonNull(env.getProperty("pos_sales_id"), "Merchant Code not set");
@@ -114,11 +124,73 @@ public class CustomerController {
 
     private int getUnitPrice(CodeCategory category) {
         Optional<ProxyPriceConfig> priceInfo = proxyPriceConfigRepository.findByCategory(category);
-        if(priceInfo.isPresent() == false){
+        if (priceInfo.isPresent() == false) {
             return 0;
         }
-        
+
         return priceInfo.get().getPrice();
+    }
+
+    @PostMapping("/callback")
+    public ResponseEntity<String> handlePaymentCallback(@RequestBody HubtelCallBack callback) {
+        log.info("Received Hubtel Callback: {}", callback);
+
+        String status = callback.getStatus();
+        String clientRef = callback.getData().getClientReference();
+        String phoneNumber = callback.getData().getCustomerPhoneNumber();
+
+        ProxyOrder order = orderService.findByClientReference(clientRef);
+        if (order == null) {
+            log.warn("No order found with reference: {}", clientRef);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
+        }
+
+        if ("Success".equalsIgnoreCase(status)) {
+            if (order.getStatus() != PaymentOrderStatus.PENDING) {
+                log.info("Order {} already processed.", clientRef);
+                return ResponseEntity.ok("Already processed");
+            }
+
+            // Mark as CONFIRMED
+            order.setStatus(PaymentOrderStatus.COMPLETED);
+            order.setPhoneNumber(phoneNumber);
+            orderService.update(order);
+
+            PageRequest pageRequest = PageRequest.of(0, order.getQuantity());
+            List<ProxyCode> availableCodes = proxyCodeRepository.findAvailableByCategoryLimited(
+                    order.getCategory(), pageRequest);
+
+            if (availableCodes.size() < order.getQuantity()) {
+                log.error("Not enough codes available");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Not enough codes");
+            }
+
+            // Mark codes as sold and log sale
+            for (ProxyCode code : availableCodes) {
+                code.setSold(true);
+                code.setSoldAt(LocalDateTime.now());
+                proxyCodeRepository.save(code);
+
+                SaleLog log = new SaleLog(
+                        null,
+                        phoneNumber,
+                        code.getCategory(),
+                        LocalDateTime.now(),
+                        code
+                );
+                saleLogRepository.save(log);
+            }
+
+            // Send code to customer (optional)
+            String smsMessage = "Your proxy code purchase is complete. Enjoy!";
+            hubtelClient.sendSMS(phoneNumber, smsMessage);
+
+            return ResponseEntity.ok("Order confirmed and codes delivered");
+        } else {
+            order.setStatus(PaymentOrderStatus.FAILED);
+            orderService.update(order);
+            return ResponseEntity.ok("Payment failed");
+        }
     }
 
 }

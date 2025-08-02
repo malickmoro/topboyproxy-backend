@@ -32,10 +32,12 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Autowired
     private final JwtFilter jwtFilter;
     private final ApiKeyFilter apiKeyFilter;
+    private final IpFilter ipFilter;
 
-    public WebSecurityConfig(JwtFilter jwtFilter, ApiKeyFilter apiKeyFilter) {
+    public WebSecurityConfig(JwtFilter jwtFilter, ApiKeyFilter apiKeyFilter, IpFilter ipFilter) {
         this.jwtFilter = jwtFilter;
         this.apiKeyFilter = apiKeyFilter;
+        this.ipFilter = ipFilter;
     }
 
     @Override
@@ -58,9 +60,11 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                         "/v3/api-docs/**",
                         "/swagger-resources/**",
                         "/webjars/**",
-                        "/api/verify-captcha"
+                        "/api/verify-captcha",
+                        "/api/client/callback"
                 ).permitAll()
                 .anyRequest().authenticated())
+                .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class) // Add custom IP filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiKeyFilter, JwtFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
