@@ -23,6 +23,7 @@ public class SaleDTO {
     private String proxyCode;
     private String category;
     
+    
     public static SaleDTO fromSaleLog(SaleLog saleLog) {
         return new SaleDTO(
             saleLog.getId().toString(),

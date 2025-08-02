@@ -189,13 +189,13 @@ public class CustomerController {
                     .collect(Collectors.joining("\n"));
 
             String smsMessage = """
-        🎉 Payment confirmed!
+        Payment confirmed
 
         Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
 
         %s
 
-        Thank you for choosing us! 🙌
+        Thank you for choosing us!
         """.formatted(codesString);
             hubtelClient.sendSMS(phoneNumber, smsMessage);
 
