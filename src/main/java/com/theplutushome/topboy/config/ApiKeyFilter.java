@@ -23,7 +23,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 @Component
 @PropertySource("classpath:application.yml")
 public class ApiKeyFilter extends OncePerRequestFilter {
-    Logger logger = LoggerFactory.getLogger(ApiKeyFilter.class);
+
+    Logger log = LoggerFactory.getLogger(ApiKeyFilter.class);
     private static final String API_KEY_HEADER = "X-API-KEY";
     private final String EXPECTED_API_KEY; // Replace with your API key
 
@@ -36,10 +37,11 @@ public class ApiKeyFilter extends OncePerRequestFilter {
         this.EXPECTED_API_KEY = apiKey;
     }
 
+    @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        logger.info("ApiKeyFilter: doFilterInternal");
+        log.info("ApiKeyFilter: doFilterInternal");
 
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             filterChain.doFilter(request, response);
@@ -54,12 +56,12 @@ public class ApiKeyFilter extends OncePerRequestFilter {
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         "apiClient", null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_API")));
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                logger.info("ApiKeyFilter: Authentication set for ROLE_API");
+                log.info("ApiKeyFilter: Authentication set for ROLE_API");
                 filterChain.doFilter(request, response);
                 return;
             } else {
                 // Invalid API Key provided
-                logger.warn("ApiKeyFilter: Invalid API Key provided");
+                log.warn("ApiKeyFilter: Invalid API Key provided ----> " + apiKey);
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("Forbidden: Invalid API Key");
                 return;
