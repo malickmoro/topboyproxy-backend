@@ -1,6 +1,6 @@
 package com.theplutushome.topboy.repository;
 
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.SaleLog;
 import java.time.LocalDateTime;
 import java.util.List;

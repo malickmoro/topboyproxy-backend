@@ -4,6 +4,8 @@
  */
 package com.theplutushome.topboy.entity;
 
+import com.theplutushome.topboy.entity.enums.CodeCategory;
+import com.theplutushome.topboy.entity.enums.PaymentOrderStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

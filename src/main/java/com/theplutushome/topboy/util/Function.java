@@ -2,6 +2,15 @@ package com.theplutushome.topboy.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
+import com.theplutushome.optimus.entity.api.hubtel.HubtelCallBack;
+import com.theplutushome.optimus.entity.api.redde.ReddeCallback;
+import com.theplutushome.topboy.dto.ProxyOrderInternalRequest;
+import com.theplutushome.topboy.entity.PaymentCallback;
+import com.theplutushome.topboy.entity.ProxyPriceConfig;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
+import com.theplutushome.topboy.entity.enums.PaymentProvider;
+import com.theplutushome.topboy.repository.PaymentCallbackRepository;
+import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -9,10 +18,16 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+@Component
 public class Function {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final Logger log  = LoggerFactory.getLogger(Function.class);
 
     /**
      * Verify the webhook signature from Cryptomus.
@@ -152,5 +167,85 @@ public class Function {
 
     public static void printInfo(Object info) {
         System.out.println("Info: " + info);
+    }
+    
+    public static PaymentCallback createRecordOfCallback(ReddeCallback callback, PaymentCallbackRepository repository) {
+
+        PaymentCallback foundRecord = repository
+                .findPaymentCallbackByClientReference(callback.getClienttransid()).orElse(null);
+
+        if (foundRecord == null) {
+            log.info("We could not find the callback");
+            PaymentCallback c = new PaymentCallback();
+            c.setClientReference(callback.getClienttransid());
+            c.setClienttransid(callback.getClientreference());
+            c.setStatus(callback.getStatus());
+            c.setStatusdate(c.getStatusdate());
+            c.setReason(callback.getReason());
+            c.setProvider(PaymentProvider.REDDE);
+            c.setTelcotransid(callback.getTelcotransid());
+            c.setTransactionid(callback.getTransactionid());
+            return c;
+        } else {
+            log.info("We found the callback");
+            foundRecord.setStatus(callback.getStatus().toUpperCase());
+            foundRecord.setStatusdate(callback.getStatusdate());
+            foundRecord.setDescription(callback.getReason());
+            foundRecord.setTelcotransid(callback.getTelcotransid());
+            foundRecord.setTransactionid(callback.getTransactionid());
+            return foundRecord;
+        }
+    }
+
+    public static PaymentCallback createRecordOfCallback(HubtelCallBack callback, PaymentCallbackRepository repository) {
+
+        PaymentCallback foundRecord = repository
+                .findPaymentCallbackByClientReference(callback.getData().getClientReference()).orElse(null);
+
+        if (foundRecord == null) {
+            log.info("We could not find the callback");
+            PaymentCallback c = new PaymentCallback();
+            c.setAmount(callback.getData().getAmount());
+            c.setClientReference(callback.getData().getClientReference());
+            c.setCustomerPhoneNumber(callback.getData().getPaymentDetails().getMobileMoneyNumber());
+            c.setProvider(PaymentProvider.HUBTEL);
+            c.setDescription(callback.getData().getDescription());
+            c.setRequestStatus(callback.getStatus());
+            c.setResponseCode(callback.getResponseCode());
+            c.setTransactionid(callback.getData().getCheckoutId());
+            c.setPaymentType(callback.getData().getPaymentDetails().getPaymentType());
+            c.setPaymentReference(callback.getData().getSalesInvoiceId());
+            c.setChannel(callback.getData().getPaymentDetails().getChannel());
+            c.setStatus(callback.getData().getStatus());
+            c.setSalesInvoiceId(callback.getData().getSalesInvoiceId());
+            return c;
+        } else {
+            log.info("We found the callback");
+            foundRecord.setAmount(callback.getData().getAmount());
+            foundRecord.setCustomerPhoneNumber(callback.getData().getPaymentDetails().getMobileMoneyNumber());
+            foundRecord.setProvider(PaymentProvider.HUBTEL);
+            foundRecord.setDescription(callback.getData().getDescription());
+            foundRecord.setRequestStatus(callback.getResponseCode());
+            foundRecord.setRequestStatus(callback.getStatus());
+            foundRecord.setResponseCode(callback.getResponseCode());
+            foundRecord.setPaymentType(callback.getData().getPaymentDetails().getPaymentType());
+            foundRecord.setChannel(callback.getData().getPaymentDetails().getChannel());
+            foundRecord.setStatus(callback.getData().getStatus());
+            foundRecord.setSalesInvoiceId(callback.getData().getSalesInvoiceId());
+            return foundRecord;
+        }
+    }
+    
+    public static double calculateAmount(ProxyOrderInternalRequest req, ProxyPriceConfigRepository repository) {
+        return req.getQuantity() * getUnitPrice(req.getCategory(), repository);
+    }
+
+    public static  int getUnitPrice(CodeCategory category, ProxyPriceConfigRepository repository) {
+        Optional<ProxyPriceConfig> priceInfo = repository.findByCategory(category);
+        if (priceInfo.isPresent() == false) {
+            return 0;
+        }
+
+        return priceInfo.get().getPrice();
     }
 }

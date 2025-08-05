@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.repository;
 
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.ProxyCode;
 import java.util.List;
 import org.springframework.data.domain.Pageable;

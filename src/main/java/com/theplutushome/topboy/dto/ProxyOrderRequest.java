@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.dto;
 
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

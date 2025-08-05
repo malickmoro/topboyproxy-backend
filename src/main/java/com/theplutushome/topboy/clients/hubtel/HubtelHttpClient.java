@@ -2,6 +2,7 @@ package com.theplutushome.topboy.clients.hubtel;
 
 import com.theplutushome.optimus.entity.api.hubtel.*;
 import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkRequest;
+import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;

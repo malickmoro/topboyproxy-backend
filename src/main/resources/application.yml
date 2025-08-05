@@ -39,6 +39,9 @@ hubtel_secrety_key: ${HUBTEL_SECRET_KEY}
 callback_url: ${CALLBACK_URL}
 cancellation_url: ${CANCELLATION_URL}
 return_url: ${RETURN_URL}
+redde_online_api_key: ${REDDE_KEY}
+redde_online_app_id: ${REDDE_APP_ID}
+logo_url: 
 
 proxy:
   server:

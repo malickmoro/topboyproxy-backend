@@ -2,7 +2,7 @@ package com.theplutushome.topboy.service;
 
 import com.theplutushome.topboy.dto.ParsedCodesResult;
 import com.theplutushome.topboy.dto.UploadResult;
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.ProxyCode;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
 import com.theplutushome.topboy.util.CsvReaderUtil;

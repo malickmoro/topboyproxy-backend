@@ -1,28 +1,34 @@
 package com.theplutushome.topboy.controller;
 
 import com.theplutushome.optimus.entity.api.hubtel.HubtelCallBack;
-import com.theplutushome.optimus.entity.api.hubtel.PaymentLinkResponse;
+import com.theplutushome.optimus.entity.api.redde.ReddeCallback;
+import com.theplutushome.optimus.entity.api.redde.ReddeCheckoutRequest;
+import com.theplutushome.optimus.entity.api.redde.ReddeCheckoutResponse;
 import com.theplutushome.topboy.clients.hubtel.HubtelRestClient;
+import com.theplutushome.topboy.clients.reddeonline.ReddeOnlineRestClient;
 import com.theplutushome.topboy.dto.AvailableCategoryDTO;
 import com.theplutushome.topboy.dto.ProxyOrderInternalRequest;
 import com.theplutushome.topboy.dto.ProxyOrderRequest;
-import com.theplutushome.topboy.entity.CodeCategory;
-import com.theplutushome.topboy.entity.PaymentOrderStatus;
+import com.theplutushome.topboy.entity.PaymentCallback;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
+import com.theplutushome.topboy.entity.enums.PaymentOrderStatus;
 import com.theplutushome.topboy.entity.ProxyCode;
 import com.theplutushome.topboy.entity.ProxyOrder;
-import com.theplutushome.topboy.entity.ProxyPriceConfig;
 import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkRequest;
+import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkResponse;
+import com.theplutushome.topboy.repository.PaymentCallbackRepository;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
 import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
 import com.theplutushome.topboy.repository.SaleLogRepository;
 import com.theplutushome.topboy.service.OrderService;
+import com.theplutushome.topboy.util.Function;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +52,8 @@ public class CustomerController {
 
     private final ProxyCodeRepository proxyCodeRepository;
     private final ProxyPriceConfigRepository proxyPriceConfigRepository;
+    private final ReddeOnlineRestClient reddeOnlineRestClient;
+    private final PaymentCallbackRepository paymentCallbackRepository;
     private final SaleLogRepository saleLogRepository;
     private final OrderService orderService;
     private final HubtelRestClient hubtelClient;
@@ -53,11 +61,17 @@ public class CustomerController {
     private final String CALLBACK_URL;
     private final String RETURN_URL;
     private final String CANCELLATION_URL;
+    private final String LOGO_URL;
+    private final String REDDE_KEY;
+    private final String REDDE_APP_ID;
 
     public CustomerController(Environment env, ProxyCodeRepository proxyCodeRepository, OrderService orderService,
-            HubtelRestClient hubtelRestClient, ProxyPriceConfigRepository priceConfigRepository, SaleLogRepository saleLogRepository) {
+            HubtelRestClient hubtelRestClient, ProxyPriceConfigRepository priceConfigRepository, SaleLogRepository saleLogRepository,
+            ReddeOnlineRestClient reddeOnlineRestClient, PaymentCallbackRepository paymentCallbackRepository) {
         this.proxyCodeRepository = proxyCodeRepository;
         this.proxyPriceConfigRepository = priceConfigRepository;
+        this.reddeOnlineRestClient = reddeOnlineRestClient;
+        this.paymentCallbackRepository = paymentCallbackRepository;
         this.saleLogRepository = saleLogRepository;
         this.orderService = orderService;
         this.hubtelClient = hubtelRestClient;
@@ -65,6 +79,9 @@ public class CustomerController {
         this.CALLBACK_URL = Objects.requireNonNull(env.getProperty("callback_url"), "Callback not set");
         this.CANCELLATION_URL = Objects.requireNonNull(env.getProperty("cancellation_url"), "Cancellation Url not set");
         this.RETURN_URL = Objects.requireNonNull(env.getProperty("return_url"), "Return Url not set");
+        this.LOGO_URL = Objects.requireNonNull(env.getProperty("logo_url"), "Logo url not set");
+        this.REDDE_KEY = Objects.requireNonNull(env.getProperty("redde_online_api_key"), "Redde online api key not set");;
+        this.REDDE_APP_ID = Objects.requireNonNull(env.getProperty("redde_online_app_id"), "Redde online app id not set");;
     }
 
     @GetMapping("/proxy-categories")
@@ -73,7 +90,7 @@ public class CustomerController {
                 .map(category -> new AvailableCategoryDTO(
                 category,
                 proxyCodeRepository.countByCategoryAndSoldFalseAndArchivedFalse(category),
-                getUnitPrice(category),
+                Function.getUnitPrice(category, proxyPriceConfigRepository),
                 category.name() + " proxies"))
                 .filter(dto -> dto.getAvailableCount() > 0)
                 .toList();
@@ -81,7 +98,7 @@ public class CustomerController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/generate-invoice")
+    @PostMapping("/hubtel/checkout")
     public ResponseEntity<PaymentLinkResponse> generateInvoice(@Valid @RequestBody ProxyOrderRequest request) {
         log.info("Payment request received: {}", request);
 
@@ -107,44 +124,60 @@ public class CustomerController {
         return ResponseEntity.ok(paymentLink);
     }
 
-    private PaymentLinkRequest toHubtelRequest(ProxyOrderInternalRequest req) {
-        PaymentLinkRequest request = new PaymentLinkRequest();
-        request.setClientReference(req.getClientReference());
-        request.setTotalAmount(calculateAmount(req));
-        request.setDescription(req.getDescription());
-        request.setCallbackUrl(req.getCallbackUrl());
-        request.setReturnUrl(req.getReturnUrl());
-        request.setCancellationUrl(req.getCancellationUrl());
-        request.setMerchantAccountNumber(MERCHANT_CODE); // Replace with config value
-        return request;
+    @Transactional
+    @PostMapping("/redde/checkout")
+    public ResponseEntity<ReddeCheckoutResponse> initiateReddeCheckout(@RequestBody @Valid ProxyOrderRequest request) {
+        System.out.println("The payment request-: " + request.toString());
+
+        ProxyOrderInternalRequest enriched = new ProxyOrderInternalRequest();
+        BeanUtils.copyProperties(request, enriched);
+        enriched.setStatus(PaymentOrderStatus.PENDING);
+        enriched.setDescription("Purchase of " + request.getQuantity() + " " + request.getCategory() + " proxies");
+        enriched.setClientReference(UUID.randomUUID().toString());
+        enriched.setCallbackUrl(CALLBACK_URL);
+        enriched.setReturnUrl(RETURN_URL);
+        enriched.setCancellationUrl(CANCELLATION_URL);
+
+        orderService.createOrder(enriched);
+
+        ReddeCheckoutResponse paymentLink = reddeOnlineRestClient.initiateCheckout(toReddeRequest(enriched));
+        return ResponseEntity.ok(paymentLink);
     }
 
-    private double calculateAmount(ProxyOrderInternalRequest req) {
-        return req.getQuantity() * getUnitPrice(req.getCategory());
-    }
-
-    private int getUnitPrice(CodeCategory category) {
-        Optional<ProxyPriceConfig> priceInfo = proxyPriceConfigRepository.findByCategory(category);
-        if (priceInfo.isPresent() == false) {
-            return 0;
-        }
-
-        return priceInfo.get().getPrice();
-    }
-
-    @PostMapping("/callback")
+    @PostMapping("/hubtel/callback")
     public ResponseEntity<String> handlePaymentCallback(@RequestBody HubtelCallBack callback) {
         log.info("Received Hubtel Callback: {}", callback);
+        PaymentCallback cb = Function.createRecordOfCallback(callback, paymentCallbackRepository);
+        paymentCallbackRepository.save(cb);
 
         String status = callback.getStatus();
         String clientRef = callback.getData().getClientReference();
-        String phoneNumber = callback.getData().getCustomerPhoneNumber();
 
+        return processCallback(clientRef, status);
+    }
+
+    @Transactional
+    @PostMapping("/redde/callback")
+    public ResponseEntity<?> reddeCallback(@RequestBody ReddeCallback callback) {
+        log.info("Redde payment callback received: {}", callback.toString());
+        PaymentCallback cb = Function.createRecordOfCallback(callback, paymentCallbackRepository);
+        paymentCallbackRepository.save(cb);
+
+        String status = callback.getStatus();
+        String clientRef = callback.getClientreference();
+
+        return processCallback(clientRef, status);
+
+    }
+
+    private ResponseEntity<String> processCallback(String clientRef, String status) {
         ProxyOrder order = orderService.findByClientReference(clientRef);
         if (order == null) {
             log.warn("No order found with reference: {}", clientRef);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Order not found");
         }
+
+        String phoneNumber = order.getPhoneNumber();
 
         if ("Success".equalsIgnoreCase(status)) {
             if (order.getStatus() != PaymentOrderStatus.PENDING) {
@@ -177,7 +210,7 @@ public class CustomerController {
                         phoneNumber,
                         code.getCategory(),
                         LocalDateTime.now(),
-                        getUnitPrice(code.getCategory()),
+                        Function.getUnitPrice(code.getCategory(), proxyPriceConfigRepository),
                         code,
                         PaymentOrderStatus.COMPLETED
                 );
@@ -190,14 +223,14 @@ public class CustomerController {
                     .collect(Collectors.joining("\n"));
 
             String smsMessage = """
-        Payment confirmed
-
-        Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
-
-        %s
-
-        Thank you for choosing us!
-        """.formatted(codesString);
+                                                    Payment confirmed
+                                            
+                                                    Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
+                                            
+                                                    %s
+                                            
+                                                    Thank you for choosing us!
+                                                    """.formatted(codesString);
             hubtelClient.sendSMS(phoneNumber, smsMessage);
 
             return ResponseEntity.ok("Order confirmed and codes delivered");
@@ -207,4 +240,31 @@ public class CustomerController {
             return ResponseEntity.ok("Payment failed");
         }
     }
+
+    private ReddeCheckoutRequest toReddeRequest(ProxyOrderInternalRequest req) {
+        ReddeCheckoutRequest request = new ReddeCheckoutRequest();
+        request.setAmount(Function.calculateAmount(req, proxyPriceConfigRepository));
+        request.setApikey(REDDE_KEY);
+        request.setFailurecallback(req.getCancellationUrl());
+        request.setSuccesscallback(req.getReturnUrl());
+        request.setLogolink(LOGO_URL);
+        request.setMerchantname("Top Boy Proxy");
+        request.setClienttransid(req.getClientReference());
+        request.setDescription("Item Purchase");
+        request.setAppid(REDDE_APP_ID);
+        return request;
+    }
+
+    private PaymentLinkRequest toHubtelRequest(ProxyOrderInternalRequest req) {
+        PaymentLinkRequest request = new PaymentLinkRequest();
+        request.setClientReference(req.getClientReference());
+        request.setTotalAmount(Function.calculateAmount(req, proxyPriceConfigRepository));
+        request.setDescription(req.getDescription());
+        request.setCallbackUrl(req.getCallbackUrl());
+        request.setReturnUrl(req.getReturnUrl());
+        request.setCancellationUrl(req.getCancellationUrl());
+        request.setMerchantAccountNumber(MERCHANT_CODE); // Replace with config value
+        return request;
+    }
+
 }

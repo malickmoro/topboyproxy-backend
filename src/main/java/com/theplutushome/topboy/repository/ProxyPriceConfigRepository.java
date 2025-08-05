@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.repository;
 
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.ProxyPriceConfig;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

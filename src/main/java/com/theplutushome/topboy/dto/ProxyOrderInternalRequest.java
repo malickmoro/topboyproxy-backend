@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.dto;
 
-import com.theplutushome.topboy.entity.PaymentOrderStatus;
+import com.theplutushome.topboy.entity.enums.PaymentOrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

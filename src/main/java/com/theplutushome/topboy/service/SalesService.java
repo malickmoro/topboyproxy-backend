@@ -8,7 +8,7 @@ import com.theplutushome.topboy.dto.RevenueStatistics;
 import com.theplutushome.topboy.dto.SaleDTO;
 import com.theplutushome.topboy.dto.SalesResponse;
 import com.theplutushome.topboy.dto.SalesStatistics;
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.repository.SaleLogRepository;
 import java.time.LocalDate;

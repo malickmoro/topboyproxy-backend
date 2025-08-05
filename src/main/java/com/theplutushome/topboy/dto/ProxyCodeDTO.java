@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.dto;
 
-import com.theplutushome.topboy.entity.CodeCategory;
+import com.theplutushome.topboy.entity.enums.CodeCategory;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;

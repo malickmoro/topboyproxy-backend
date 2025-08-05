@@ -1,4 +1,4 @@
-package com.theplutushome.optimus.entity.api.hubtel;
+package com.theplutushome.topboy.entity.api.hubtel;
 
 public class PaymentLinkResponse {
     private String responseCode;
