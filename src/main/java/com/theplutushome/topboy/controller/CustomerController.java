@@ -170,11 +170,11 @@ public class CustomerController {
         String status = callback.getStatus();
         String clientRef = callback.getClienttransid();
 
-        return processCallback(clientRef, status, cb.getChannel());
+        return processCallback(clientRef, status, cb.getProvider().name());
 
     }
 
-    private ResponseEntity<String> processCallback(String clientRef, String status, String channel) {
+    private ResponseEntity<String> processCallback(String clientRef, String status, String provider) {
         ProxyOrder order = orderService.findByClientReference(clientRef);
         if (order == null) {
             log.warn("No order found with reference: {}", clientRef);
@@ -234,26 +234,26 @@ public class CustomerController {
                     .map(ProxyCode::getCode)
                     .collect(Collectors.joining("\n"));
 
-            String smsMessage = """
-    Payment Successful
+            String smsMessage = String.format("""
+        Payment Successful
 
-    Your CDKEY(s):
-    %s
+        Your CDKEY(s):
+        %s
 
-    Redeem in the Exchange Menu.
+        Redeem in the Exchange Menu.
 
-    Thank you for choosing TopBoyProxy.
-""".formatted(codesString);
+        Thank you for choosing TopBoyProxy.
+        """, codesString);
 
             String adminSms = String.format("""
         NEW PAYMENT ALERT
 
         AMOUNT: GHS %.2f
-        CHANNEL: %s
+        PAYMENT CHANNEL : %s
         CUSTOMER: %s
         """,
                     totalAmount,
-                    channel,
+                    provider,
                     order.getPhoneNumber());
 
             hubtelClient.sendSMS(phoneNumber, smsMessage);
