@@ -41,7 +41,6 @@ cancellation_url: ${CANCELLATION_URL}
 return_url: ${RETURN_URL}
 redde_online_api_key: ${REDDE_KEY}
 redde_online_app_id: ${REDDE_APP_ID}
-redde_return_url: ${REDDE_RETURN_URL}
 logo_url: 
 
 proxy:
