@@ -6,8 +6,8 @@ package com.theplutushome.topboy.service;
 
 import com.theplutushome.optimus.entity.api.hubtel.HubtelCallBack;
 import com.theplutushome.topboy.dto.ProxyOrderInternalRequest;
-import com.theplutushome.topboy.dto.ProxyOrderRequest;
 import com.theplutushome.topboy.entity.ProxyOrder;
+import com.theplutushome.topboy.exception.NotFoundException;
 import com.theplutushome.topboy.repository.ProxyOrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +18,6 @@ import org.springframework.stereotype.Service;
  *
  * @author plutus
  */
-
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -48,7 +46,7 @@ public class OrderService {
         return proxyOrderRepository.findByClientReference(clientReference)
                 .orElseThrow(() -> {
                     log.error("Order with reference [{}] not found", clientReference);
-                    return new RuntimeException("Order not found");
+                    return new NotFoundException("Order with reference [" + clientReference + "] not found");
                 });
     }
 

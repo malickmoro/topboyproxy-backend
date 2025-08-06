@@ -171,7 +171,7 @@ public class CustomerController {
         paymentCallbackRepository.save(cb);
 
         String status = callback.getStatus();
-        String clientRef = callback.getClientreference();
+        String clientRef = callback.getClienttransid();
 
         return processCallback(clientRef, status);
 
