@@ -49,7 +49,9 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        return WHITELIST.stream().anyMatch(path::startsWith);
+        log.info("JwtFilter: Checking if path is whitelisted: {}", path);
+        // Exact match, or remove trailing slash if needed
+        return WHITELIST.contains(path) || WHITELIST.contains(path.replaceAll("/$", ""));
     }
 
     @Override

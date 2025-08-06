@@ -27,6 +27,21 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(ApiKeyFilter.class);
     private static final String API_KEY_HEADER = "X-API-KEY";
     private final String expectedApiKey;
+    private static final List<String> WHITELIST = List.of(
+            "/admin/login",
+            "/admin/create-user",
+            "/api/client/redde/callback",
+            "/api/client/hubtel/callback",
+            "/swagger-ui.html",
+            "/swagger-ui/",
+            "/swagger-ui/index.html",
+            "/v3/api-docs",
+            "/v3/api-docs/",
+            "/v3/api-docs/swagger-config",
+            "/swagger-resources",
+            "/swagger-resources/",
+            "/webjars/"
+    );
 
     public ApiKeyFilter(Environment environment) {
         String rawKey = environment.getProperty("application.api.key");
@@ -34,6 +49,14 @@ public class ApiKeyFilter extends OncePerRequestFilter {
             throw new IllegalStateException("API key must be configured via application.api.key");
         }
         this.expectedApiKey = rawKey.trim();
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        log.info("JwtFilter: Checking if path is whitelisted: {}", path);
+        // Exact match, or remove trailing slash if needed
+        return WHITELIST.contains(path) || WHITELIST.contains(path.replaceAll("/$", ""));
     }
 
     @Override
