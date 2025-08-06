@@ -114,7 +114,7 @@ public class CustomerController {
         BeanUtils.copyProperties(request, enriched);
         enriched.setStatus(PaymentOrderStatus.PENDING);
         enriched.setDescription("Purchase of " + request.getQuantity() + " " + request.getCategory() + " proxies");
-        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString());
+        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString().substring(0, 15));
         enriched.setCallbackUrl(CALLBACK_URL);
         enriched.setReturnUrl(RETURN_URL);
         enriched.setCancellationUrl(CANCELLATION_URL);
@@ -135,7 +135,7 @@ public class CustomerController {
         BeanUtils.copyProperties(request, enriched);
         enriched.setStatus(PaymentOrderStatus.PENDING);
         enriched.setDescription("Purchase of " + request.getQuantity() + " " + request.getCategory() + " proxies");
-        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString());
+        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString().substring(0, 15));
         enriched.setCallbackUrl(CALLBACK_URL);
         enriched.setReturnUrl(REDDE_RETURN_URL);
         enriched.setCancellationUrl(CANCELLATION_URL);
@@ -158,6 +158,12 @@ public class CustomerController {
         return processCallback(clientRef, status);
     }
 
+    @GetMapping("/redde/callback")
+    public ResponseEntity<String> handleCallbackPing() {
+        // return 200 OK for GET requests, no processing
+        return ResponseEntity.ok("Callback endpoint is reachable");
+    }
+    
     @Transactional
     @PostMapping("/redde/callback")
     public ResponseEntity<?> reddeCallback(@RequestBody ReddeCallback callback) {
