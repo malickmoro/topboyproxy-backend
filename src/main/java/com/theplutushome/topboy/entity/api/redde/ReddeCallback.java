@@ -1,4 +1,4 @@
-package com.theplutushome.optimus.entity.api.redde;
+package com.theplutushome.topboy.entity.api.redde;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

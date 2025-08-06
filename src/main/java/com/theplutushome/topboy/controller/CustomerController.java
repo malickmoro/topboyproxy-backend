@@ -1,7 +1,6 @@
 package com.theplutushome.topboy.controller;
 
 import com.theplutushome.optimus.entity.api.hubtel.HubtelCallBack;
-import com.theplutushome.optimus.entity.api.redde.ReddeCallback;
 import com.theplutushome.optimus.entity.api.redde.ReddeCheckoutRequest;
 import com.theplutushome.optimus.entity.api.redde.ReddeCheckoutResponse;
 import com.theplutushome.topboy.clients.hubtel.HubtelRestClient;
@@ -17,6 +16,7 @@ import com.theplutushome.topboy.entity.ProxyOrder;
 import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkRequest;
 import com.theplutushome.topboy.entity.api.hubtel.PaymentLinkResponse;
+import com.theplutushome.topboy.entity.api.redde.ReddeCallback;
 import com.theplutushome.topboy.repository.PaymentCallbackRepository;
 import com.theplutushome.topboy.repository.ProxyCodeRepository;
 import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
@@ -60,6 +60,7 @@ public class CustomerController {
     private final String MERCHANT_CODE;
     private final String CALLBACK_URL;
     private final String RETURN_URL;
+    private final String REDDE_RETURN_URL;
     private final String CANCELLATION_URL;
     private final String LOGO_URL;
     private final String REDDE_KEY;
@@ -79,6 +80,7 @@ public class CustomerController {
         this.CALLBACK_URL = Objects.requireNonNull(env.getProperty("callback_url"), "Callback not set");
         this.CANCELLATION_URL = Objects.requireNonNull(env.getProperty("cancellation_url"), "Cancellation Url not set");
         this.RETURN_URL = Objects.requireNonNull(env.getProperty("return_url"), "Return Url not set");
+        this.REDDE_RETURN_URL = Objects.requireNonNull(env.getProperty("redde_return_url"), "Return Url not set");
         this.LOGO_URL = Objects.requireNonNull(env.getProperty("logo_url"), "Logo url not set");
         this.REDDE_KEY = Objects.requireNonNull(env.getProperty("redde_online_api_key"), "Redde online api key not set");;
         this.REDDE_APP_ID = Objects.requireNonNull(env.getProperty("redde_online_app_id"), "Redde online app id not set");;
@@ -112,7 +114,7 @@ public class CustomerController {
         BeanUtils.copyProperties(request, enriched);
         enriched.setStatus(PaymentOrderStatus.PENDING);
         enriched.setDescription("Purchase of " + request.getQuantity() + " " + request.getCategory() + " proxies");
-        enriched.setClientReference(UUID.randomUUID().toString());
+        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString());
         enriched.setCallbackUrl(CALLBACK_URL);
         enriched.setReturnUrl(RETURN_URL);
         enriched.setCancellationUrl(CANCELLATION_URL);
@@ -133,9 +135,9 @@ public class CustomerController {
         BeanUtils.copyProperties(request, enriched);
         enriched.setStatus(PaymentOrderStatus.PENDING);
         enriched.setDescription("Purchase of " + request.getQuantity() + " " + request.getCategory() + " proxies");
-        enriched.setClientReference(UUID.randomUUID().toString());
+        enriched.setClientReference("TOPBOY-" + UUID.randomUUID().toString());
         enriched.setCallbackUrl(CALLBACK_URL);
-        enriched.setReturnUrl(RETURN_URL);
+        enriched.setReturnUrl(REDDE_RETURN_URL);
         enriched.setCancellationUrl(CANCELLATION_URL);
 
         orderService.createOrder(enriched);

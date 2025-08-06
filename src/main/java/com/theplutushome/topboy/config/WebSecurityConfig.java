@@ -64,7 +64,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/api/verify-captcha",
-                        "/api/client/callback"
+                        "/api/client/hubtel/callback",
+                        "/api/client/redde/callback"
                 ).permitAll()
                 .anyRequest().authenticated())
                 .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class) // Add custom IP filter
