@@ -80,8 +80,8 @@ public class CustomerController {
         this.CANCELLATION_URL = Objects.requireNonNull(env.getProperty("cancellation_url"), "Cancellation Url not set");
         this.RETURN_URL = Objects.requireNonNull(env.getProperty("return_url"), "Return Url not set");
         this.LOGO_URL = Objects.requireNonNull(env.getProperty("logo_url"), "Logo url not set");
-        this.REDDE_KEY = Objects.requireNonNull(env.getProperty("redde_online_api_key"), "Redde online api key not set");;
-        this.REDDE_APP_ID = Objects.requireNonNull(env.getProperty("redde_online_app_id"), "Redde online app id not set");;
+        this.REDDE_KEY = Objects.requireNonNull(env.getProperty("redde_online_api_key"), "Redde online api key not set");
+        this.REDDE_APP_ID = Objects.requireNonNull(env.getProperty("redde_online_app_id"), "Redde online app id not set");
     }
 
     @GetMapping("/proxy-categories")
@@ -152,7 +152,7 @@ public class CustomerController {
         String status = callback.getStatus();
         String clientRef = callback.getData().getClientReference();
 
-        return processCallback(clientRef, status);
+        return processCallback(clientRef, status, cb.getChannel());
     }
 
     @GetMapping("/redde/callback")
@@ -170,11 +170,11 @@ public class CustomerController {
         String status = callback.getStatus();
         String clientRef = callback.getClienttransid();
 
-        return processCallback(clientRef, status);
+        return processCallback(clientRef, status, cb.getChannel());
 
     }
 
-    private ResponseEntity<String> processCallback(String clientRef, String status) {
+    private ResponseEntity<String> processCallback(String clientRef, String status, String channel) {
         ProxyOrder order = orderService.findByClientReference(clientRef);
         if (order == null) {
             log.warn("No order found with reference: {}", clientRef);
@@ -209,21 +209,24 @@ public class CustomerController {
             }
 
             // Mark codes as sold and log sales
+            double totalAmount = 0.0;
             for (ProxyCode code : availableCodes) {
                 code.setSold(true);
                 code.setSoldAt(LocalDateTime.now());
                 proxyCodeRepository.save(code);
 
+                int unitPrice = Function.getUnitPrice(code.getCategory(), proxyPriceConfigRepository);
                 SaleLog salesLog = new SaleLog(
                         null,
                         phoneNumber,
                         code.getCategory(),
                         LocalDateTime.now(),
-                        Function.getUnitPrice(code.getCategory(), proxyPriceConfigRepository),
+                        unitPrice,
                         code,
                         PaymentOrderStatus.COMPLETED
                 );
                 saleLogRepository.save(salesLog);
+                totalAmount = totalAmount + unitPrice;
             }
 
             // Send SMS
@@ -232,16 +235,29 @@ public class CustomerController {
                     .collect(Collectors.joining("\n"));
 
             String smsMessage = """
-            Payment confirmed
+    Payment Successful
 
-            Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
+    Your CDKEY(s):
+    %s
 
-            %s
+    Redeem in the Exchange Menu.
 
-            Thank you for choosing us!
-        """.formatted(codesString);
+    Thank you for choosing TopBoyProxy.
+""".formatted(codesString);
+
+            String adminSms = String.format("""
+        NEW PAYMENT ALERT
+
+        AMOUNT: GHS %.2f
+        CHANNEL: %s
+        CUSTOMER: %s
+        """,
+                    totalAmount,
+                    channel,
+                    order.getPhoneNumber());
 
             hubtelClient.sendSMS(phoneNumber, smsMessage);
+            hubtelClient.sendSMS("233599036479", adminSms);
 
             return ResponseEntity.ok("Order confirmed and codes delivered");
         } else if (pendingStatuses.contains(normalizedStatus)) {
@@ -257,7 +273,6 @@ public class CustomerController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unrecognized payment status");
         }
     }
-    
 
     private ReddeCheckoutRequest toReddeRequest(ProxyOrderInternalRequest req) {
         ReddeCheckoutRequest request = new ReddeCheckoutRequest();
