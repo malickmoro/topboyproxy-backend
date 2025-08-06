@@ -23,12 +23,12 @@ import com.theplutushome.topboy.repository.ProxyPriceConfigRepository;
 import com.theplutushome.topboy.repository.SaleLogRepository;
 import com.theplutushome.topboy.service.OrderService;
 import com.theplutushome.topboy.util.Function;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -160,7 +160,7 @@ public class CustomerController {
         // return 200 OK for GET requests, no processing
         return ResponseEntity.ok("Callback endpoint is reachable");
     }
-    
+
     @PostMapping("/redde/callback")
     public ResponseEntity<?> reddeCallback(@RequestBody ReddeCallback callback) {
         log.info("Redde payment callback received: {}", callback.toString());
@@ -182,14 +182,19 @@ public class CustomerController {
         }
 
         String phoneNumber = order.getPhoneNumber();
+        String normalizedStatus = status.trim().toUpperCase();
 
-        if ("Success".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
+        Set<String> completedStatuses = Set.of("SUCCESS", "PAID");
+        Set<String> pendingStatuses = Set.of("PROGRESS", "SUBMITTED", "PROCESSING");
+        Set<String> failedStatuses = Set.of("FAILED", "CANCELLED", "REJECTED");
+
+        if (completedStatuses.contains(normalizedStatus)) {
             if (order.getStatus() != PaymentOrderStatus.PENDING) {
                 log.info("Order {} already processed.", clientRef);
                 return ResponseEntity.ok("Already processed");
             }
 
-            // Mark as CONFIRMED
+            // Mark as COMPLETED
             order.setStatus(PaymentOrderStatus.COMPLETED);
             order.setPhoneNumber(phoneNumber);
             orderService.update(order);
@@ -200,10 +205,10 @@ public class CustomerController {
 
             if (availableCodes.size() < order.getQuantity()) {
                 log.error("Not enough codes available");
-                return ResponseEntity.status(HttpStatus.CONFLICT).body("Not enough codes");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Not enough codes available");
             }
 
-            // Mark codes as sold and log sale
+            // Mark codes as sold and log sales
             for (ProxyCode code : availableCodes) {
                 code.setSold(true);
                 code.setSoldAt(LocalDateTime.now());
@@ -221,30 +226,38 @@ public class CustomerController {
                 saleLogRepository.save(salesLog);
             }
 
-            // Send code to customer (optional)
+            // Send SMS
             String codesString = availableCodes.stream()
                     .map(ProxyCode::getCode)
                     .collect(Collectors.joining("\n"));
 
             String smsMessage = """
-                                                    Payment confirmed
-                                            
-                                                    Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
-                                            
-                                                    %s
-                                            
-                                                    Thank you for choosing us!
-                                                    """.formatted(codesString);
+            Payment confirmed
+
+            Your proxy CDKEY(s) are ready. Copy and redeem them in the Exchange Menu:
+
+            %s
+
+            Thank you for choosing us!
+        """.formatted(codesString);
+
             hubtelClient.sendSMS(phoneNumber, smsMessage);
 
             return ResponseEntity.ok("Order confirmed and codes delivered");
-        } else {
-            System.out.println("Payment Failed");
+        } else if (pendingStatuses.contains(normalizedStatus)) {
+            log.info("Payment still pending for order {}", clientRef);
+            return ResponseEntity.ok("Payment pending – no action taken yet");
+        } else if (failedStatuses.contains(normalizedStatus)) {
+            log.warn("Payment failed for order {}", clientRef);
             order.setStatus(PaymentOrderStatus.FAILED);
             orderService.update(order);
-            return ResponseEntity.ok("Payment failed");
+            return ResponseEntity.ok("Payment failed – order marked as failed");
+        } else {
+            log.warn("Unrecognized payment status [{}] for order {}", status, clientRef);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Unrecognized payment status");
         }
     }
+    
 
     private ReddeCheckoutRequest toReddeRequest(ProxyOrderInternalRequest req) {
         ReddeCheckoutRequest request = new ReddeCheckoutRequest();
