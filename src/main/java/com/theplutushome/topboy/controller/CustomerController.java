@@ -184,7 +184,7 @@ public class CustomerController {
 
         String phoneNumber = order.getPhoneNumber();
 
-        if ("Success".equalsIgnoreCase(status)) {
+        if ("PAID".equalsIgnoreCase(status)) {
             if (order.getStatus() != PaymentOrderStatus.PENDING) {
                 log.info("Order {} already processed.", clientRef);
                 return ResponseEntity.ok("Already processed");
