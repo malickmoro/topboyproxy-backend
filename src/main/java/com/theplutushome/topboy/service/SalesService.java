@@ -4,6 +4,8 @@
  */
 package com.theplutushome.topboy.service;
 
+import com.theplutushome.topboy.dto.AggregatedSalesData;
+import com.theplutushome.topboy.dto.AggregatedSalesResponse;
 import com.theplutushome.topboy.dto.RevenueStatistics;
 import com.theplutushome.topboy.dto.SaleDTO;
 import com.theplutushome.topboy.dto.SalesResponse;
@@ -13,10 +15,15 @@ import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.repository.SaleLogRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -146,6 +153,90 @@ public class SalesService {
             log.error("Error retrieving sales data", e);
             throw new RuntimeException("Failed to retrieve sales data", e);
         }
+    }
+
+    public AggregatedSalesResponse getAggregatedSales(String startDate, String endDate, String category, String period) {
+        try {
+            List<SaleLog> saleLogs = getFilteredSales(startDate, endDate, category);
+            List<AggregatedSalesData> aggregatedData = new ArrayList<>();
+
+            switch (period) {
+                case "daily" ->
+                    aggregatedData = aggregateByDay(saleLogs);
+                case "weekly" ->
+                    aggregatedData = aggregateByWeek(saleLogs);
+                case "monthly" ->
+                    aggregatedData = aggregateByMonth(saleLogs);
+            }
+
+            return new AggregatedSalesResponse(aggregatedData);
+        } catch (Exception e) {
+            log.error("Error generating aggregated sales data", e);
+            throw new RuntimeException("Failed to generate aggregated sales data", e);
+        }
+    }
+
+    private List<AggregatedSalesData> aggregateByDay(List<SaleLog> saleLogs) {
+        Map<String, AggregatedSalesData> dayMap = new LinkedHashMap<>();
+
+        // Initialize all days of the week
+        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+        for (String day : days) {
+            dayMap.put(day, new AggregatedSalesData(day, 0, 0.0));
+        }
+
+        // Aggregate sales by day of week
+        for (SaleLog sale : saleLogs) {
+            LocalDate saleDate = sale.getTimestamp().toLocalDate();
+            String dayOfWeek = saleDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+            AggregatedSalesData existing = dayMap.get(dayOfWeek);
+            existing.setSales(existing.getSales() + 1);
+            existing.setRevenue(existing.getRevenue() + sale.getAmount());
+        }
+
+        return new ArrayList<>(dayMap.values());
+    }
+
+    private List<AggregatedSalesData> aggregateByWeek(List<SaleLog> saleLogs) {
+        Map<Integer, AggregatedSalesData> weekMap = new TreeMap<>();
+
+        for (SaleLog sale : saleLogs) {
+            LocalDate saleDate = sale.getTimestamp().toLocalDate();
+            int weekOfMonth = (saleDate.getDayOfMonth() - 1) / 7 + 1;
+
+            weekMap.computeIfAbsent(weekOfMonth, week
+                    -> new AggregatedSalesData("Week " + week, 0, 0.0));
+
+            AggregatedSalesData existing = weekMap.get(weekOfMonth);
+            existing.setSales(existing.getSales() + 1);
+            existing.setRevenue(existing.getRevenue() + sale.getAmount());
+        }
+
+        return new ArrayList<>(weekMap.values());
+    }
+
+    private List<AggregatedSalesData> aggregateByMonth(List<SaleLog> saleLogs) {
+        Map<String, AggregatedSalesData> monthMap = new LinkedHashMap<>();
+
+        // Initialize all months
+        String[] months = {"January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"};
+        for (String month : months) {
+            monthMap.put(month, new AggregatedSalesData(month, 0, 0.0));
+        }
+
+        // Aggregate sales by month
+        for (SaleLog sale : saleLogs) {
+            LocalDate saleDate = sale.getTimestamp().toLocalDate();
+            String month = saleDate.getMonth().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+            AggregatedSalesData existing = monthMap.get(month);
+            existing.setSales(existing.getSales() + 1);
+            existing.setRevenue(existing.getRevenue() + sale.getAmount());
+        }
+
+        return new ArrayList<>(monthMap.values());
     }
 
 }

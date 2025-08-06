@@ -4,6 +4,7 @@
  */
 package com.theplutushome.topboy.controller;
 
+import com.theplutushome.topboy.dto.AggregatedSalesResponse;
 import com.theplutushome.topboy.dto.ApiResponse;
 import com.theplutushome.topboy.dto.CreateAdminUserRequest;
 import com.theplutushome.topboy.dto.LoginRequest;
@@ -184,6 +185,33 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Internal server error",
                             "Failed to delete code due to database error"));
+        }
+    }
+
+    @GetMapping("/sales/aggregated")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AggregatedSalesResponse> getAggregatedSales(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam String period
+    ) {
+        try {
+            log.info("Received aggregated sales request - period: {}, startDate: {}, endDate: {}, category: {}",
+                    period, startDate, endDate, category);
+
+            // Validate period parameter
+            if (!Arrays.asList("daily", "weekly", "monthly").contains(period)) {
+                return ResponseEntity.badRequest()
+                        .body(new AggregatedSalesResponse("Invalid period parameter. Must be 'daily', 'weekly', or 'monthly'"));
+            }
+
+            AggregatedSalesResponse response = salesService.getAggregatedSales(startDate, endDate, category, period);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error retrieving aggregated sales data", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
