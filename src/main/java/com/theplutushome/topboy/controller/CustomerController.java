@@ -124,7 +124,6 @@ public class CustomerController {
         return ResponseEntity.ok(paymentLink);
     }
 
-    @Transactional
     @PostMapping("/redde/checkout")
     public ResponseEntity<ReddeCheckoutResponse> initiateReddeCheckout(@RequestBody @Valid ProxyOrderRequest request) {
         System.out.println("The payment request-: " + request.toString());
@@ -184,7 +183,7 @@ public class CustomerController {
 
         String phoneNumber = order.getPhoneNumber();
 
-        if ("Success".equalsIgnoreCase(status) || "Paid".equalsIgnoreCase(status)) {
+        if ("Success".equalsIgnoreCase(status) || "PAID".equalsIgnoreCase(status)) {
             if (order.getStatus() != PaymentOrderStatus.PENDING) {
                 log.info("Order {} already processed.", clientRef);
                 return ResponseEntity.ok("Already processed");
@@ -240,6 +239,7 @@ public class CustomerController {
 
             return ResponseEntity.ok("Order confirmed and codes delivered");
         } else {
+            System.out.println("Payment Failed");
             order.setStatus(PaymentOrderStatus.FAILED);
             orderService.update(order);
             return ResponseEntity.ok("Payment failed");
