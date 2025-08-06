@@ -164,7 +164,6 @@ public class CustomerController {
         return ResponseEntity.ok("Callback endpoint is reachable");
     }
     
-    @Transactional
     @PostMapping("/redde/callback")
     public ResponseEntity<?> reddeCallback(@RequestBody ReddeCallback callback) {
         log.info("Redde payment callback received: {}", callback.toString());
