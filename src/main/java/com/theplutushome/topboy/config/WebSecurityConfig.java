@@ -44,7 +44,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins("https://admin.topboyproxy.com",
-                        "https://topboyproxy.com")
+                        "https://www.topboyproxy.com")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*"); // or specify "X-API-KEY"
     }
@@ -74,6 +74,15 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 .addFilterBefore(apiKeyFilter, JwtFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+        return http.build();
+    }
+
+    @Bean
+    SecurityFilterChain callbackChain(HttpSecurity http, IpFilter ipFilter) throws Exception {
+        http
+                .securityMatcher("/api/client/callback") // Only match this path
+                .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
     }
 

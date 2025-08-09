@@ -60,7 +60,7 @@ public class SalesService {
     }
 
     private List<SaleLog> getFilteredSales(String startDate, String endDate, String category) {
-        Specification<SaleLog> spec = Specification.where(null);
+        Specification<SaleLog> spec = Specification.allOf(); // ✅ no deprecation warning
 
         if (startDate != null && !startDate.isBlank()) {
             LocalDate start = LocalDate.parse(startDate);
@@ -133,7 +133,10 @@ public class SalesService {
 
             LocalDateTime start = hasStart ? LocalDateTime.parse(startDate) : null;
             LocalDateTime end = hasEnd ? LocalDateTime.parse(endDate) : null;
-            CodeCategory codeCategory = hasCategory ? CodeCategory.valueOf(category.toUpperCase()) : null;
+            CodeCategory codeCategory
+                    = (category != null && !category.isBlank())
+                    ? CodeCategory.valueOf(category.toUpperCase())
+                    : null;
 
             if (hasStart && hasEnd && hasCategory) {
                 saleLogs = saleLogRepository.findByCategoryAndTimestampBetween(codeCategory, start, end);
