@@ -43,7 +43,10 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("z")
+                .allowedOrigins(
+                        "https://admin.theplutushome.com",
+                        "https://theplutushome.com",
+                        "https://www.theplutushome.com")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*"); // or specify "X-API-KEY"
     }
