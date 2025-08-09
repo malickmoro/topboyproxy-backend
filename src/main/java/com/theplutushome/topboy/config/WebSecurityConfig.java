@@ -4,7 +4,7 @@
  */
 package com.theplutushome.topboy.config;
 
-import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -26,8 +26,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Configuration
 @EnableMethodSecurity // enables @PreAuthorize, @PostAuthorize, etc.
+
 public class WebSecurityConfig implements WebMvcConfigurer {
 
+    @Autowired
     private final JwtFilter jwtFilter;
     private final ApiKeyFilter apiKeyFilter;
     private final IpFilter ipFilter;
@@ -41,38 +43,13 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins(
-                        "https://admin.topboyproxy.com",
-                        "https://topboyproxy.com", // add apex if you use it
-                        "https://www.topboyproxy.com" // keep www if it’s real
-                )
+                .allowedOrigins("z")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true); // only if you need cookies/auth headers
+                .allowedHeaders("*"); // or specify "X-API-KEY"
     }
 
-    // 1) Specific chain FIRST for payment callbacks (higher priority)
     @Bean
-    @org.springframework.core.annotation.Order(1)
-    SecurityFilterChain callbackChain(HttpSecurity http) throws Exception {
-        http
-                .securityMatcher(
-                        "/api/client/hubtel/callback",
-                        "/api/client/redde/callback"
-                )
-                .cors(withDefaults())
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                // Only attach the IP filter here so it runs ONLY for callbacks
-                .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-        return http.build();
-    }
-
-    // 2) Catch‑all chain LAST (lower priority)
-    @Bean
-    @org.springframework.core.annotation.Order(2)
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .cors(withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
@@ -87,28 +64,14 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                         "/swagger-resources/**",
                         "/webjars/**",
                         "/api/verify-captcha",
-                        "/error"
-                // NOTE: do NOT include the callback paths here;
-                // they’re handled by the callbackChain above.
+                        "/api/client/hubtel/callback",
+                        "/api/client/redde/callback"
                 ).permitAll()
-                .anyRequest().authenticated()
-                )
-                // Do NOT add ipFilter here
+                .anyRequest().authenticated())
+                .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class) // Add custom IP filter
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(apiKeyFilter, JwtFilter.class)
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex
-                .authenticationEntryPoint((req, res, e) -> {
-                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    res.setContentType("application/json");
-                    res.getWriter().write("{\"error\":\"unauthorized\"}");
-                })
-                .accessDeniedHandler((req, res, e) -> {
-                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                    res.setContentType("application/json");
-                    res.getWriter().write("{\"error\":\"forbidden\"}");
-                })
-                );
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }

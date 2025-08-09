@@ -26,15 +26,20 @@ public class JwtFilter extends OncePerRequestFilter {
     Logger log = LoggerFactory.getLogger(JwtFilter.class);
     private final JwtUtil jwtUtil;
 
-    private static final List<String> PUBLIC_PREFIXES = List.of(
+    private static final List<String> WHITELIST = List.of(
             "/admin/login",
             "/admin/create-user",
             "/api/client/redde/callback",
             "/api/client/hubtel/callback",
-            "/swagger-ui",
+            "/swagger-ui.html",
+            "/swagger-ui/",
+            "/swagger-ui/index.html",
             "/v3/api-docs",
+            "/v3/api-docs/",
+            "/v3/api-docs/swagger-config",
             "/swagger-resources",
-            "/webjars"
+            "/swagger-resources/",
+            "/webjars/"
     );
 
     public JwtFilter(JwtUtil jwtUtil) {
@@ -44,11 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            return true;
-        }
-
-        return PUBLIC_PREFIXES.stream().anyMatch(path::startsWith);
+        return WHITELIST.stream().anyMatch(path::startsWith);
     }
 
     @Override
