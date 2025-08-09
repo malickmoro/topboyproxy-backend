@@ -4,11 +4,10 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.web.servlet.util.matcher.MvcRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
 
 import java.io.IOException;
 import java.util.Map;
@@ -18,10 +17,10 @@ public class IpFilter extends OncePerRequestFilter {
 
     private final Map<RequestMatcher, String> allowedIpPerEndpoint;
 
-    public IpFilter(HandlerMappingIntrospector introspector) {
+    public IpFilter() {
         this.allowedIpPerEndpoint = Map.of(
-            // MvcRequestMatcher uses patterns relative to DispatcherServlet mapping
-            new MvcRequestMatcher(introspector, "/api/client/callback"), "108.129.40.25"
+            // Modern constructor with HTTP method (optional)
+            AntPathRequestMatcher.antMatcher("/api/client/callback"), "108.129.40.25"
         );
     }
 
@@ -37,9 +36,11 @@ public class IpFilter extends OncePerRequestFilter {
         }
 
         for (Map.Entry<RequestMatcher, String> entry : allowedIpPerEndpoint.entrySet()) {
-            if (entry.getKey().matches(request) && !entry.getValue().equals(clientIp)) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid IP Address");
-                return;
+            if (entry.getKey().matches(request)) {
+                if (!entry.getValue().equals(clientIp)) {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Invalid IP Address");
+                    return;
+                }
             }
         }
 
