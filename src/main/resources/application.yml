@@ -49,4 +49,10 @@ proxy:
     port: ${PROXY_PORT}
     username: ${PROXY_USERNAME}
     password: ${PROXY_PASSWORD}
+    
+logging:
+  level:
+    org.springframework.security.access.intercept: DEBUG
+    org.springframework.security.access.prepost: DEBUG
+
 
