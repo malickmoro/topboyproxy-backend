@@ -4,6 +4,7 @@
  */
 package com.theplutushome.topboy.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,14 +41,14 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-            .allowedOrigins(
-                "https://admin.topboyproxy.com",
-                "https://topboyproxy.com",        // add apex if you use it
-                "https://www.topboyproxy.com"     // keep www if it’s real
-            )
-            .allowedMethods("GET","POST","PUT","DELETE","OPTIONS")
-            .allowedHeaders("*")
-            .allowCredentials(true); // only if you need cookies/auth headers
+                .allowedOrigins(
+                        "https://admin.topboyproxy.com",
+                        "https://topboyproxy.com", // add apex if you use it
+                        "https://www.topboyproxy.com" // keep www if it’s real
+                )
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true); // only if you need cookies/auth headers
     }
 
     // 1) Specific chain FIRST for payment callbacks (higher priority)
@@ -55,16 +56,16 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @org.springframework.core.annotation.Order(1)
     SecurityFilterChain callbackChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher(
-                "/api/client/hubtel/callback",
-                "/api/client/redde/callback"
-            )
-            .cors(withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-            // Only attach the IP filter here so it runs ONLY for callbacks
-            .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .securityMatcher(
+                        "/api/client/hubtel/callback",
+                        "/api/client/redde/callback"
+                )
+                .cors(withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                // Only attach the IP filter here so it runs ONLY for callbacks
+                .addFilterBefore(ipFilter, UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         return http.build();
     }
 
@@ -73,28 +74,42 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     @org.springframework.core.annotation.Order(2)
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(withDefaults())
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
+                .cors(withDefaults())
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(
-                    "/admin/login",
-                    "/admin/create-user",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/v3/api-docs/**",
-                    "/swagger-resources/**",
-                    "/webjars/**",
-                    "/api/verify-captcha"
-                    // NOTE: do NOT include the callback paths here;
-                    // they’re handled by the callbackChain above.
+                        "/admin/login",
+                        "/admin/create-user",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs/**",
+                        "/swagger-resources/**",
+                        "/webjars/**",
+                        "/api/verify-captcha",
+                        "/error"
+                // NOTE: do NOT include the callback paths here;
+                // they’re handled by the callbackChain above.
                 ).permitAll()
                 .anyRequest().authenticated()
-            )
-            // Do NOT add ipFilter here
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(apiKeyFilter, JwtFilter.class)
-            .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                )
+                // Do NOT add ipFilter here
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(apiKeyFilter, JwtFilter.class)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex
+                .authenticationEntryPoint((req, res, e) -> {
+                    res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"unauthorized\"}");
+                })
+                .accessDeniedHandler((req, res, e) -> {
+                    res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\":\"forbidden\"}");
+                })
+                );
+
         return http.build();
     }
 
