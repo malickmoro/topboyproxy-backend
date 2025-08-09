@@ -44,9 +44,9 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOrigins(
-                        "https://admin.theplutushome.com",
-                        "https://theplutushome.com",
-                        "https://www.theplutushome.com")
+                        "https://admin.topboyproxy.com",
+                        "https://topboyproxy.com",
+                        "https://www.topboyproxy.com")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*"); // or specify "X-API-KEY"
     }
