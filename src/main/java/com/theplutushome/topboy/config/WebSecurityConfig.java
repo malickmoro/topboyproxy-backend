@@ -46,7 +46,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "https://admin.topboyproxy.com",
                         "https://topboyproxy.com",
-                        "https://www.topboyproxy.com")
+                        "https://www.topboyproxy.com",
+                        "http://localhost:3000")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*"); // or specify "X-API-KEY"
     }
