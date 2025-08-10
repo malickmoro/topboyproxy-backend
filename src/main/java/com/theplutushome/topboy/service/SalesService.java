@@ -13,9 +13,11 @@ import com.theplutushome.topboy.dto.SalesStatistics;
 import com.theplutushome.topboy.entity.enums.CodeCategory;
 import com.theplutushome.topboy.entity.SaleLog;
 import com.theplutushome.topboy.repository.SaleLogRepository;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -165,7 +167,7 @@ public class SalesService {
 
             switch (period) {
                 case "daily" ->
-                    aggregatedData = aggregateByDay(saleLogs);
+                    aggregatedData = aggregateCurrentWeek(saleLogs);
                 case "weekly" ->
                     aggregatedData = aggregateByWeek(saleLogs);
                 case "monthly" ->
@@ -179,23 +181,27 @@ public class SalesService {
         }
     }
 
-    private List<AggregatedSalesData> aggregateByDay(List<SaleLog> saleLogs) {
-        Map<String, AggregatedSalesData> dayMap = new LinkedHashMap<>();
+    private List<AggregatedSalesData> aggregateCurrentWeek(List<SaleLog> saleLogs) {
+        LocalDate today = LocalDate.now(); // or pass this in for testability
+        LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY));
+        LocalDate endOfWeek = startOfWeek.plusDays(6);
 
-        // Initialize all days of the week
-        String[] days = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-        for (String day : days) {
-            dayMap.put(day, new AggregatedSalesData(day, 0, 0.0));
+        // Build the map for THIS week only (Sun..Sat)
+        Map<LocalDate, AggregatedSalesData> dayMap = new LinkedHashMap<>();
+        for (int i = 0; i < 7; i++) {
+            LocalDate d = startOfWeek.plusDays(i);
+            String label = d.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+            dayMap.put(d, new AggregatedSalesData(label, 0, 0.0));
         }
 
-        // Aggregate sales by day of week
+        // Aggregate ONLY logs whose date falls within [startOfWeek, endOfWeek]
         for (SaleLog sale : saleLogs) {
             LocalDate saleDate = sale.getTimestamp().toLocalDate();
-            String dayOfWeek = saleDate.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
-
-            AggregatedSalesData existing = dayMap.get(dayOfWeek);
-            existing.setSales(existing.getSales() + 1);
-            existing.setRevenue(existing.getRevenue() + sale.getAmount());
+            if (!saleDate.isBefore(startOfWeek) && !saleDate.isAfter(endOfWeek)) {
+                AggregatedSalesData agg = dayMap.get(saleDate);
+                agg.setSales(agg.getSales() + 1);
+                agg.setRevenue(agg.getRevenue() + sale.getAmount());
+            }
         }
 
         return new ArrayList<>(dayMap.values());
