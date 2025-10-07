@@ -32,14 +32,14 @@ public class JwtFilter extends OncePerRequestFilter {
             "/api/client/redde/callback",
             "/api/client/hubtel/callback",
             "/swagger-ui.html",
-            "/swagger-ui/",
+            "/swagger-ui/**",
             "/swagger-ui/index.html",
             "/v3/api-docs",
-            "/v3/api-docs/",
+            "/v3/api-docs/**",
             "/v3/api-docs/swagger-config",
             "/swagger-resources",
-            "/swagger-resources/",
-            "/webjars/"
+            "/swagger-resources/**",
+            "/webjars/**"
     );
 
     public JwtFilter(JwtUtil jwtUtil) {

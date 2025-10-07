@@ -22,7 +22,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.properties")
 @Component
 public class HubtelRestClient implements HubtelHttpClient {
 

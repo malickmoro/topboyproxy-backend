@@ -18,7 +18,7 @@ import java.util.Map;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
 
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.properties")
 @Component
 public class ReddeOnlineRestClient implements ReddeOnlineHttpClient {
 

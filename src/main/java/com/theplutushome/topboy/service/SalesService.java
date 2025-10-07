@@ -168,8 +168,8 @@ public class SalesService {
             switch (period) {
                 case "daily" ->
                     aggregatedData = aggregateCurrentWeek(saleLogs);
-                case "weekly" ->
-                    aggregatedData = aggregateByWeek(saleLogs);
+//                case "weekly" ->
+//                    aggregatedData = aggregateByWeek(saleLogs);
                 case "monthly" ->
                     aggregatedData = aggregateByMonth(saleLogs);
             }
@@ -207,23 +207,23 @@ public class SalesService {
         return new ArrayList<>(dayMap.values());
     }
 
-    private List<AggregatedSalesData> aggregateByWeek(List<SaleLog> saleLogs) {
-        Map<Integer, AggregatedSalesData> weekMap = new TreeMap<>();
-
-        for (SaleLog sale : saleLogs) {
-            LocalDate saleDate = sale.getTimestamp().toLocalDate();
-            int weekOfMonth = (saleDate.getDayOfMonth() - 1) / 7 + 1;
-
-            weekMap.computeIfAbsent(weekOfMonth, week
-                    -> new AggregatedSalesData("Week " + week, 0, 0.0));
-
-            AggregatedSalesData existing = weekMap.get(weekOfMonth);
-            existing.setSales(existing.getSales() + 1);
-            existing.setRevenue(existing.getRevenue() + sale.getAmount());
-        }
-
-        return new ArrayList<>(weekMap.values());
-    }
+//    private List<AggregatedSalesData> aggregateByWeek(List<SaleLog> saleLogs) {
+//        Map<Integer, AggregatedSalesData> weekMap = new TreeMap<>();
+//
+//        for (SaleLog sale : saleLogs) {
+//            LocalDate saleDate = sale.getTimestamp().toLocalDate();
+//            int weekOfMonth = (saleDate.getDayOfMonth() - 1) / 7 + 1;
+//
+//            weekMap.computeIfAbsent(weekOfMonth, week
+//                    -> new AggregatedSalesData("Week " + week, 0, 0.0));
+//
+//            AggregatedSalesData existing = weekMap.get(weekOfMonth);
+//            existing.setSales(existing.getSales() + 1);
+//            existing.setRevenue(existing.getRevenue() + sale.getAmount());
+//        }
+//
+//        return new ArrayList<>(weekMap.values());
+//    }
 
     private List<AggregatedSalesData> aggregateByMonth(List<SaleLog> saleLogs) {
         Map<String, AggregatedSalesData> monthMap = new LinkedHashMap<>();

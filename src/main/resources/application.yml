@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://ep-dawn-mountain-a1h3we60-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channelBinding=require
+    username: neondb_owner
+    password: npg_Zbi1UtBCnY5K
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,8 +20,9 @@ spring:
       max-request-size: 10MB
 
 server:
-  port: 8080
-  
+  port: ${PORT:8080}
+
+
 application:
   api:
     key: ${APP_KEY}

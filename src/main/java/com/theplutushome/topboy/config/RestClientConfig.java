@@ -20,7 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
 
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.properties")
 @Configuration
 public class RestClientConfig {
 

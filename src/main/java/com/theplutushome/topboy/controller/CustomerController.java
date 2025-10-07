@@ -47,7 +47,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/client")
 @Slf4j
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.properties")
 public class CustomerController {
 
     private final ProxyCodeRepository proxyCodeRepository;
@@ -243,6 +243,7 @@ public class CustomerController {
         Redeem in the Exchange Menu.
 
         Thank you for choosing TopBoyProxy.
+        For any assistance, contact us on 0508066245.                                 
         """, codesString);
 
             String adminSms = String.format("""

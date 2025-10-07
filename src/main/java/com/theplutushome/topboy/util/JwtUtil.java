@@ -17,7 +17,7 @@ import java.util.Date;
 import java.util.function.Function;
 import javax.crypto.SecretKey;
 
-@PropertySource("classpath:application.yml")
+@PropertySource("classpath:application.properties")
 @Service
 @RequiredArgsConstructor
 public class JwtUtil {
